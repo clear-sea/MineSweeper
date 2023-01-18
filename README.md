@@ -13,3 +13,5 @@
 
 ❌完善随机布雷
 ❌计时器
+![屏幕截图 2023-01-18 155608](https://user-images.githubusercontent.com/111341725/213115988-782afe99-0e93-41eb-8bb7-8af18d734741.png)
+![屏幕截图 2023-01-18 155648](https://user-images.githubusercontent.com/111341725/213115995-d3800f84-821f-488a-88a2-f933a5f52cf2.png)
