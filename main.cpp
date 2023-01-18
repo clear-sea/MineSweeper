@@ -1,14 +1,15 @@
 #include<graphics.h>
 #include<iostream>
-#include<thread>
 #include<ctime>
 
 using namespace std;
 //全局变量
-MOUSEMSG msg;
-IMAGE mine, grid, grid_motion, grid_down, flag, flag_motion;
-const int width = 400, height = 400, grid_size = 40,mines_num_copy=10;
-int all_num=0,grid_x = 0, grid_y = 0, mines_num = 10, layout_size = width / grid_size;
+MOUSEMSG msg;//全局鼠标信息变量
+IMAGE mine, grid, grid_motion, grid_down, flag, flag_motion , mine_other;//所有图像变量
+//单个格子大小(单位：像素)，雷数常量，格子布局长宽(单位：格子)，窗口宽度，窗口高度
+const int grid_size = 40, layout_size=10, width = layout_size * grid_size, height = layout_size * grid_size;
+
+int all_num = 0, grid_x = 0, grid_y = 0, mines_num = 10;
 
 //格子类，边长为40像素的正方形
 class Grid {
@@ -32,8 +33,8 @@ public:
 		if (i == 0 && j == 0)
 		{
 			//左上角
-			int grids[8][2] = { {0,1},{2,2},{1,0},{1,1},{1,2},{2,0},{2,1},{2,2} };
-			for (int a = 0; a < 8; a++) {
+			int grids[3][2] = { {0,1},{1,0},{1,1}};
+			for (int a = 0; a < 3; a++) {
 				this->grids[a][0] = grids[a][0];
 				this->grids[a][1] = grids[a][1];
 			}
@@ -42,8 +43,8 @@ public:
 		else if (i == layout_size - 1 && j == layout_size - 1)
 		{
 			//右下角
-			int grids[8][2] = { {layout_size - 1,layout_size - 2},{layout_size - 1,layout_size - 3},{layout_size - 2,layout_size - 1},{layout_size - 2,layout_size - 2},{layout_size - 2,layout_size - 3},{layout_size - 3,layout_size - 1},{layout_size - 3,layout_size - 2},{layout_size - 3,layout_size - 3} };
-			for (int a = 0; a < 8; a++) {
+			int grids[3][2] = { {layout_size - 1,layout_size - 2},{layout_size - 2,layout_size - 1},{layout_size - 2,layout_size - 2}};
+			for (int a = 0; a < 3; a++) {
 				this->grids[a][0] = grids[a][0];
 				this->grids[a][1] = grids[a][1];
 			}
@@ -52,8 +53,8 @@ public:
 		else if (i == 0 && j == layout_size - 1)
 		{
 			//右上角
-			int grids[8][2] = { {0,layout_size - 2},{0,layout_size - 3},{1,layout_size - 1},{1,layout_size - 2},{1,layout_size - 3},{2,layout_size - 1},{2,layout_size - 2},{2,layout_size - 3} };
-			for (int a = 0; a < 8; a++) {
+			int grids[3][2] = { {0,layout_size - 2},{1,layout_size - 1},{1,layout_size - 2}};
+			for (int a = 0; a < 3; a++) {
 				this->grids[a][0] = grids[a][0];
 				this->grids[a][1] = grids[a][1];
 			}
@@ -61,8 +62,8 @@ public:
 
 		else if (i == layout_size - 1 && j == 0){
 			//左下角
-			int grids[8][2] = { {layout_size - 3,0},{layout_size - 3,1},{layout_size - 3,2},{layout_size - 2,0},{layout_size - 2,1},{layout_size - 2,2},{layout_size - 1,1},{layout_size - 1,2} };
-			for (int a = 0; a < 8; a++) {
+			int grids[3][2] = { {layout_size - 1,layout_size - 2},{layout_size - 2,layout_size - 2},{layout_size-2,layout_size-1} };
+			for (int a = 0; a < 3; a++) {
 				this->grids[a][0] = grids[a][0];
 				this->grids[a][1] = grids[a][1];
 			}
@@ -142,7 +143,7 @@ public:
 		outtextxy(x1 + 6, y1 - 3, _T(info));
 	}
 
-	void find_0(Grid(&layout)[10][10]) {
+	void find_0(Grid(&layout)[layout_size][layout_size]) {
 		for (int a = 0; a < 8; a++) {//遍历grids（周围格子）
 			int i = grids[a][0], j = grids[a][1];
 			if (layout[i][j].num == 0 && layout[i][j].is_click == false && layout[i][j].is_mine == false) {
@@ -157,11 +158,8 @@ public:
 	}
 };
 
-
 int main() {
 	//程序初始化
-	bool is_mine;
-
 	initgraph(width, height);
 	setbkcolor(WHITE);
 	cleardevice();
@@ -172,27 +170,29 @@ int main() {
 	loadimage(&grid_down, "images/grid_down.png", grid_size, grid_size);
 	loadimage(&flag, "images/flag.png", grid_size, grid_size);
 	loadimage(&flag_motion, "images/flag_motion.png", grid_size, grid_size);
+	loadimage(&mine_other, "images/mine_other.png", grid_size, grid_size);
 	//布雷
 	Grid layout[width / grid_size][height / grid_size];//布局，用二维数组，如果是1就有雷，0则没有
 
 	srand(time(nullptr));
+	//初始化
 	for (int i = 0; i < layout_size; i++) {
 		for (int j = 0; j < layout_size; j++) {
-			is_mine = rand() % 2;
-			
-			if (is_mine && mines_num > 0 && i!=0 && j!=0) {
-				layout[i][j].init(true, grid_x, grid_y, i, j);
-				mines_num--;
-			}
-			else if (is_mine && mines_num <= 0)
-				layout[i][j].init(false, grid_x, grid_y, i, j);
-			else
-				layout[i][j].init(false, grid_x, grid_y, i, j);
-
+			layout[i][j].init(false, grid_x, grid_y, i, j);
 			grid_x += 40;
 		}
 		grid_y += 40;
 		grid_x = 0;
+	}
+	//随机布雷实现
+	int x = 0, y = 0, count = 0;
+	for (count = 0; count < mines_num;){
+		x = 1 + rand() % layout_size-1;
+		y = 1 + rand() % layout_size-1;
+		if (layout[x][y].is_mine == false){
+			layout[x][y].is_mine = true;
+			count++;//每次布置好一个雷之后,才会计数
+		}
 	}
 
 	for (int i = 0; i < layout_size; i++) {
@@ -205,15 +205,13 @@ int main() {
 			}
 		}
 	}
-
-	/*调试输出布局
+	/*调试输出布局*/
 	for (int i = 0; i < layout_size; i++) {
 		for (int j = 0; j < layout_size; j++) {
 			cout << layout[i][j].is_mine << ' ';
 		}
 		cout << endl;
-	}*/
-
+	}
 	//轮询监测鼠标事件
 	while (true) {
 		//监测鼠标操作
@@ -230,10 +228,13 @@ int main() {
 							if (layout[i][j].is_mine) {
 								layout[i][j].change(mine);
 								//显示提示信息
-								setbkmode(TRANSPARENT);
-								settextcolor(RED);
-								settextstyle(50, 0, _T("Consolas"));
-								outtextxy(width / 2 - 180, height / 2 - 30, _T("踩雷了！即将退出"));
+								for (int x = 0; x < layout_size; x++) {
+									for (int y = 0; y < layout_size; y++) {
+										if (layout[x][y].is_mine && x != i && y != j)
+											layout[x][y].change(mine_other);
+									}
+								}
+								cout << "踩雷！即将退出";
 								Sleep(2500); //停顿两秒半
 								//退出程序
 								return 0;
@@ -251,12 +252,15 @@ int main() {
 							all_num++;
 						}
 						//判断未点开的格子数，从而判断输赢
-						if (all_num == layout_size * layout_size - mines_num_copy) {
+						if (all_num == layout_size * layout_size - mines_num) {
 							//显示提示信息
-							setbkmode(TRANSPARENT);
-							settextcolor(GREEN);
-							settextstyle(50, 0, _T("Consolas"));
-							outtextxy(width / 2 - 180, height / 2 - 30, _T("获胜！即将退出"));
+							for (int x = 0; x < layout_size; x++) {
+								for (int y = 0; y < layout_size; y++) {
+									if (layout[x][y].is_mine && x != i && y != j)
+										layout[x][y].change(flag);
+								}
+							}
+							cout<<"获胜！即将退出";
 							Sleep(2500); //停顿两秒半
 							//退出
 							return 0;
